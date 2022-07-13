@@ -123,3 +123,202 @@ WHERE last_name LIKE 'b%' -- start with b, use % to indicate any number of chara
 WHERE last_name LIKE '%b%' -- means having b at somewhere
 WHERE last_name LIKE '%b' -- means having b at last
 WHERE last_name LIKE '_b' -- means with two exact characters and last is b, ____ for more
+-- % to present any # of characters
+-- _ to present single character
+
+
+
+-- get the customers whose address contain TRAIL or AVENUE
+SELECT * 
+FROM customers
+WHERE address LIKE '%trail%' OR -- anywhere has trail
+	  address LIKE '%avenue%'
+
+
+-- phone # end with 9
+SELECT * 
+FROM customers
+WHERE address LIKE '%9'
+
+SELECT * 
+FROM customers
+WHERE address NOT LIKE '%9'
+
+
+
+SELECT * 
+FROM customers
+WHERE last_name LIKE '%field%'
+WHERE last_name REGEXP 'field' -- exact like above
+WHERE last_name REGEXP '^field' -- ^ means begining of the string, must start with field
+WHERE last_name REGEXP 'field$' -- lastname must ends with field
+WHERE last_name REGEXP 'field|mac'
+WHERE last_name REGEXP '^field|mac|rose'
+WHERE last_name REGEXP '[gim]e' -- match any of the characters that's ge, ie, me
+WHERE last_name REGEXP 'e[fmq]'
+WHERE last_name REGEXP '[a-h]e' -- any char from a to h
+-- ^ beginning
+-- $ end
+-- | logical or
+-- [abcd]
+-- [a-f]
+
+
+
+--get the customers whose
+--first names are ELKA or AMBUR
+SELECT *
+FROM customers
+WHERE first_name REGEXP 'elka|ambur'
+
+--last name end with EY or ON
+SELECT *
+FROM customers
+WHERE first_name REGEXP 'ey$|on$'
+
+--last names start with MY or contains SW
+SELECT *
+FROM customers
+WHERE first_name REGEXP '^my|se'
+
+--last names contain B followed by R or U
+SELECT *
+FROM customers
+WHERE first_name REGEXP 'b[ru]'
+
+
+
+--The is null operator
+SELECT *
+FROM customers
+WHERE phone IS NULL
+
+
+--GET THE ORDERS THAT ARE NOT SHIPPED
+SELECT *
+FROM orders
+WHERE shipped_date IS NULL
+
+--1:15:00 talks about the relation bw database
+
+--customer_id is the default column
+--sort by other column
+SELECT * 
+FROM customers
+ORDER BY first_name
+ORDER BY first_name DESC --descending order
+ORDER BY state, first_name --if two same states, sort by first_name
+
+SELECT first_name, last_name, 10 AS points --AS alias (not an actual thing in data)
+FROM customers
+ORDER BY points, birth_date
+ORDER BY 1, 2 -- (first_name, last_name, try to avoid this)
+
+
+
+SELECT *
+FROM order_items
+WHERE order_id = 2
+ORDER BY quantity * unit_price DESC --sort by total price
+
+SELECT *, quantity * unit_price AS total_price
+FROM order_items
+WHERE order_id = 2
+ORDER BY total_price DESC --sort by total price
+
+
+--how to mimic records returned from the query
+SELECT * 
+FROM customers
+LIMIT 300
+
+-- if we have customer on different pagination
+SELECT * 
+FROM customers
+LIMIT 6 ,3 --skip first 6 records then pick 3 records (7,8,9)
+
+
+-- get the top three loyal customers
+SELECT *
+FROM customers
+ORDER BY points DESC
+LIMIT 3 -- should always be at the end
+
+
+
+SELECT order_id, orders.customer_id, first_name, last_name --select only order id, first name, last name
+--important needs to specify customer_id from order or customer
+FROM orders
+JOIN customers ON orders.customer_id = customers.customer_id
+-- join orders table with customers table, and make sure customers on ...order id = ...customer.id
+
+SELECT order_id, o.customer_id, first_name, last_name 
+FROM orders o --o is the alias 
+JOIN customers c
+	ON o.customer_id = c.customer_id
+
+
+
+
+SELECT order_id, oi.product_id, quantity, oi.unit_price -- because product_id appear both tables, need to add oi
+FROM order_items oi --select evetythings from items, oi is the alias
+JOIN products p ON oi.product_id = p.product_id -- and joining with products table
+
+
+
+--combine tables across from multiple data bases
+SELECT *
+FROM order_items oi 
+JOIN sql_inventory.products p --different database, need to add sql_ before
+	ON oi.product_id = p.product_id
+
+
+
+-- find manager
+USE sql_hr;
+SELECT 
+	e.employee_id,
+	e.first_name,
+	m.first_name AS manager
+FROM employees e --select everything from employee table
+JOIN employees m-- join the table by itself so can find manager
+ ON e.reports_to = m.employee_id
+
+
+-- more than two tables
+SELECT 
+	o.order_id,
+	o.order_date,
+	c.first_name,
+	c.last_name,
+	os.name AS status
+FROM orders o
+JOIN customers c
+	ON o.customer_id = c.customer_id
+JOIN order_statuses os
+	ON o.status = os.order_status_id
+
+
+USE sql_invoicing;
+
+SELECT *
+FROM payments p
+JOIN clients c
+	ON p.client_id = c.client_id
+
+
+
+USE sql_invoicing;
+
+SELECT 
+	p.date,
+	p.invoice_id,
+	p.amount
+FROM payments p
+JOIN clients c
+	ON p.client_id = c.client_id
+JOIN payment_methods pm
+	ON p.payment_methods = pm.payment_method_id
+
+
+
