@@ -322,3 +322,246 @@ JOIN payment_methods pm
 
 
 
+--1:47:00, talks about compound order keys
+SELECT *
+FROM order_items oi --table
+JOIN order_item_notes oin --table
+	ON oi.order_id = oin.order_id
+	AND oi.product_id = oin.product_id --compound join condition
+
+
+--implicity join syntax
+SELECT *
+FROM orders o
+JOIN customers c
+	ON o.customer_id = c.customer_id
+
+
+--implicity join syntax, implemented (not recommend)
+SELECT * 
+FROM orders o, customers c
+WHERE o.customer_id = c.customer_id
+
+
+--outer join
+
+--inner join
+SELECT 
+	c.customer_id,
+	c.first_name,
+	o.order_id
+FROM customers c
+JOIN orders o
+	ON c.customer_id = o.customer_id
+ORDER BY c.customer_id
+
+--outer, to see customer whether they have an order or not
+SELECT 
+	c.customer_id,
+	c.first_name,
+	o.order_id
+FROM customers c
+LEFT JOIN orders o -- from the left point our customer is returned regardless condition is true or not (showing null)
+	ON c.customer_id = o.customer_id
+ORDER BY c.customer_id
+
+--practice
+SELECT 
+	p.product_id,
+	p.name,
+	oi.quantity
+FROM products p
+LEFT JOIN order_items oi
+	ON p.product_id = oi.product_id
+
+SELECT 
+	p.product_id,
+	p.name,
+	oi.quantity,
+	sh.name AS shipper
+FROM products p
+LEFT JOIN order_items oi
+	ON p.product_id = oi.product_id
+LEFT JOIN shippers sh
+	ON o.shipper_id = sh.shipper_id
+ORDER BY c.customer_id
+
+
+--exercise
+SELECT 
+	o.order_id,
+	o.order_date,
+	c.first_name AS customer
+	sh.name AS shipper
+	os.name AS status
+FROM orders o
+JOIN customers c
+	ON o.customer_id = c.customer_id
+LEFT JOIN shippers sh
+	ON o.shipper_id = sh.shipper_id
+JOIN order_statuses os
+	ON o.status = os.order_status_id
+
+
+--self join
+USE sql_hr;
+
+SELECT
+	e.employee_id,
+	e.first_name,
+	m.first_name AS manager
+FROM employees e
+LEFT JOIN employees m
+	ON e.reports_to = m.employee_id
+
+--if with same column
+SELECT
+	o.order_id,
+	c.first_name,
+	sh.name AS shipper
+FROM orders o
+JOIN customers c
+	--ON o.customer_id = c.customer_id
+	USING (customer_id)
+LEFT JOIN shippers sh
+	USING (shipper_id) --only to use if the column name is exact the same across tables
+
+
+--
+SELECT *
+FROM order_items oi
+JOIN order_item_notes oin
+	USING (order_id, product_id)
+
+
+--exercise
+USE sql_invoicing;
+
+SELECT 
+	p.date,
+	c.name AS client,
+	p.amount,
+	pm.name AS payment_method
+FROM payments p
+JOIN clients c USING (client_id)
+JOIN payment_methods pm
+	ON p.payment_method = pm.payment_method_id
+
+--NATURAL JOIN (not recommeneded)
+SELECT 
+	o.order_id,
+	c.first_name
+FROM orders o
+NATURAL JOIN customers c --nature join, we don't explicit look at data name, join on columns have the same name
+
+
+--Cross Join
+SELECT *
+FROM customers c
+CROSS JOIN products p --every record in customer table will be combined with products table
+
+--exercie
+--Do a cross join bw shippers and products
+--using the implicit syntax
+--and then using the explicit syntax
+
+--implicit
+SELECT
+	sh.name AS shipper,
+	p.name AS product
+FROM shippers sh, products p --combination of all shippers and all products
+ORDER BY sh.name
+
+--explicit
+SELECT
+	sh.name AS shipper,
+	p.name AS product
+FROM shippers sh
+CROSS JOIN products p 
+ORDER BY sh.name
+
+
+--unions
+SELECT 
+	order_id,
+	order_date,
+	'Active' AS status --give it an active column showing active
+FROM orders
+WHERE order_date >= '2019-01-01';
+UNION --combine up and down
+SELECT 
+	order_id,
+	order_date,
+	'Archived' AS status --give it an active column showing active
+FROM orders
+WHERE order_date < '2019-01-01'
+
+-- remember, UNION needs two result to have same columnd #
+
+
+--Exercise
+SELECT customer_id, first_name, points, 'Bronze' AS type
+FROM customers
+WHERE points < 2000
+UNION
+SELECT customer_id, first_name, points, 'Silver' AS type
+FROM customers
+WHERE points BETWEEN 2000 AND 3000
+UNION
+SELECT customer_id, first_name, points, 'Gold' AS type
+FROM customers
+WHERE points > 3000
+ORDER BY first_name
+
+
+
+--2:27:00 explains what tool icon is 
+
+
+-- insert a single row into table
+INSERT INTO customers (
+	first_name, 
+	last_name, 
+	birth_date,
+	address,
+	city,
+	state
+	) --inside () is the column u want to insert values into, this is only example; no enough columns to match below
+VALUES (
+	DEFAULT, 
+	'John', 
+	'Smith', 
+	'1990-01-01',
+	NULL,
+	'address',
+	'city',
+	'CA',
+	DEFAULT
+	) --Default means let SQL generates an unique id for you (AL is selected)
+
+
+	--insert multiple rows
+	INSERT INTO shippers (name)
+	VALUES ('Shipper1'),
+		   ('Shipper2'),
+		   ('Shipper3'),
+
+
+--exercise 
+--insert three rows in the products table
+INSERT INTO products (name, quantity_in_stock, unit_price)
+VALUES ('Product1', 10, 1.95),
+	   ('Product2', 11, 1.95),
+	   ('Product3', 12, 1.95),
+
+
+--insert hierarchical rows
+--parent/child relationship, orders-table is the parent, order-items is the child
+INSERT INTO orders (customer_id, order_date, status)
+VALUES (1, '2019-01-02', 1);
+
+INSERT INTO order_items
+VALUES 
+	(LAST_INSERT_ID(), 1, 1, 2.95),
+	(LAST_INSERT_ID(), 2, 1, 3.95),
+--SELECT LAST_INSERT_ID() --need to know the ID for the column we just insert
