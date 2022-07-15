@@ -565,3 +565,139 @@ VALUES
 	(LAST_INSERT_ID(), 1, 1, 2.95),
 	(LAST_INSERT_ID(), 2, 1, 3.95),
 --SELECT LAST_INSERT_ID() --need to know the ID for the column we just insert
+
+
+--creating a copy of a table
+--if have 10 datas, very time consuming, just copy one table to another
+--no AL in designing mode, no longer an auto increment column 
+CREATE TABLE orders_archived AS
+SELECT * FROM orders
+--then right click the orders_arcived, select truncate the table (delete all data)
+--then clear aboe query
+
+--get data before 2019
+INSERT INTO orders_archived
+SELECT *
+FROM orders
+WHERE order_data < '2019-01-01'
+
+--exercise
+--copy invoices and put it into invoices_archive
+--select only the invoices with payment date
+USE sql_invoicing;
+
+CREATE TABLE invoices_archive AS
+SELECT 
+	i.invoice_id,
+	i.number,
+	c.name AS client,
+	i.invoice_total,
+	i.payment_total,
+	i.invoice_date,
+	i.payment_date,
+	i.due_date
+FROM invoices i
+JOIN clients c
+	USING (client_id)
+WHERE payment_date IS NOT NULL
+
+--if want to run the query one more time, right click and drop table
+
+
+--update single column
+UPDATE invoices
+SET payment_total = 10, payment_date = '2019-03-01'
+WHERE invoice_id = 1
+
+--what if update wrong table
+UPDATE invoices
+SET payment_total = 0, payment_date = NULL --0 or default
+WHERE invoice_id = 1
+
+--50%
+UPDATE invoices
+SET
+	payment_total = invoice_total * 0.5,
+	payment_date = due_date
+WHERE invoice_id = 3
+
+
+--updaeing multiple rows
+--2:58:00 explain how to solve safe update mode on work bench (ok in vs code)
+UPDATE invoices
+SET
+	payment_total = invoice_total * 0.5,
+	payment_date = due_date
+WHERE client_id = 3
+-- all the invoices on client #3 are updated
+
+-- exercise
+-- write a SQL statement to 
+-- give any customers botn before 1990
+-- 50 extra points
+USE sql_store;
+
+UPDATE customers
+SET points = points + 50
+WHERE birth_date < '1990-01-01'
+
+
+-- using subqueries in updates
+-- what if we don't have id of a client
+-- we only have a name
+UPDATE invoices
+SET
+	payment_total = invoice_total * 0.5,
+	payment_date = due_date
+WHERE client_id = 
+				(SELECT client_id
+				FROM clients
+				WHERE name = 'Myworks')
+
+-- update clients from NY and CA
+UPDATE invoices
+SET
+	payment_total = invoice_total * 0.5,
+	payment_date = due_date
+WHERE client_id IN 
+				(SELECT client_id
+				FROM clients
+				WHERE state IN = ('CA', 'NY'))
+
+--another, even if we dont have subquery, we still find the query we want to update
+UPDATE invoices
+SET
+	payment_total = invoice_total * 0.5,
+	payment_date = due_date
+
+SELECT * --get rid of this once you are sure
+FROM invoices --get rid of this once you are sure
+WHERE payment_date IS NULL
+
+--exercise
+--double click sql_store before execute this query
+UPDATE orders
+SET comments = 'Gold customer'
+WHERE customer_id IN
+					(SELECT *
+					FROM customers
+					WHERE points > 3000)
+
+
+-- deleting rows, be very careful
+DELETE FROM invoices
+WHERE invoice_id = (
+	SELECT *
+	FROM clients
+	WHERE name = 'Myworks'
+)
+
+
+--run this first to make sure
+-- SELECT *
+-- FROM clients
+-- WHERE name = 'Myworks'
+
+
+--restore databases
+--3:08:00
